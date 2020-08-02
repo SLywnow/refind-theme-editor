@@ -13,9 +13,17 @@ public class MakePreset : MonoBehaviour
     public GameObject showui;
     public GameObject selectproj;
     public GameObject projprev;
+    public GameObject setupimages;
+    public PresetSelect selectim;
+    public GameObject setupconfig;
     public AudioSource makescreen;
     public CanvasScaler canvas;
 
+    public GameObject newtheme;
+    public InputField newthemename;
+    public Configproj Gconfig;
+    public PresetConfig configsc;
+    public Configproj config;
     public PreviewSetup prew;
     public SceneOptions prevopt;
     public SceneSetUp scene;
@@ -28,15 +36,281 @@ public class MakePreset : MonoBehaviour
     List<Sprite> bgs;
     List<Sprite> ics;
     List<Sprite> sls;
+    
+    
 
     public void Start()
     {
+        SaveSystemAlt.StartWork();
         GetProjects();
         mode = md.select;
         sceneobj.canvas.SetActive(false);
         selectproj.SetActive(true);
         showui.SetActive(false);
         projprev.SetActive(false);
+    }
+
+    public void OpenSetUpImages(bool close)
+	{
+        if (close)
+		{
+            ReOpen();
+            setupimages.SetActive(false);
+        }
+        else
+		{
+            setupimages.SetActive(true);
+            selectim.OpenSelect();
+        }
+	}
+
+    public void OpenProjSel(bool config)
+	{
+        if (config)
+		{
+            Gconfig.configobj.SetActive(true);
+            Gconfig.bigicon.text = SaveSystemAlt.GetInt("Gconf_bi", 172).ToString();
+            Gconfig.smallicon.text = SaveSystemAlt.GetInt("Gconf_si", 72).ToString();
+            Gconfig.shutdown.isOn = SaveSystemAlt.GetBool("Gconf_shd", true);
+            Gconfig.reboot.isOn = SaveSystemAlt.GetBool("Gconf_rb", true);
+            Gconfig.exit.isOn = SaveSystemAlt.GetBool("Gconf_ex", false);
+        }
+        else
+		{
+            newthemename.text = "";
+            newtheme.SetActive(true);
+        }
+	}
+
+    public void CancelConfig(bool save)
+	{
+        if (save)
+		{
+            SaveSystemAlt.SetInt("Gconf_bi", int.Parse(Gconfig.bigicon.text));
+            SaveSystemAlt.SetInt("Gconf_si", int.Parse(Gconfig.smallicon.text));
+            SaveSystemAlt.SetBool("Gconf_shd", Gconfig.shutdown.isOn);
+            SaveSystemAlt.SetBool("Gconf_rb", Gconfig.reboot.isOn);
+            SaveSystemAlt.SetBool("Gconf_ex", Gconfig.exit.isOn);
+            SaveSystemAlt.SaveUpdatesNotClose();
+        }
+        Gconfig.configobj.SetActive(false);
+	}
+
+    public void CreateNewProject(bool cancel)
+	{
+        if (cancel)
+        {
+            newthemename.text = "";
+            newtheme.SetActive(false);
+        }
+        else
+		{
+            if (!string.IsNullOrEmpty(newthemename.text))
+            {
+                FilesSet.CreateDirectory(FastFind.GetDefaultPath() + "/SLywnow/rEFInd theme editor/projects/" + newthemename.text);
+                List<string> tosave = new List<string>();
+                for (int i = 0; i < configsc.text.Count; i++)
+                {
+                    string save = "";
+                    if (configsc.text[i] == "<<bi>>") save = "big_icon_size " + SaveSystemAlt.GetInt("Gconf_bi", 172).ToString();
+                    else if (configsc.text[i] == "<<si>>") save = "small_icon_size " + SaveSystemAlt.GetInt("Gconf_si", 72).ToString();
+                    else if (configsc.text[i] == "<<st>>")
+                    {
+                        if (SaveSystemAlt.GetBool("Gconf_shd", true) || SaveSystemAlt.GetBool("Gconf_rb", true) || SaveSystemAlt.GetBool("Gconf_ex", false))
+                        {
+                            save = "showtools ";
+                            bool firsthave = false;
+                            if (SaveSystemAlt.GetBool("Gconf_shd", true))
+                            {
+                                save += "shutdown";
+                                firsthave = true;
+                            }
+                            if (SaveSystemAlt.GetBool("Gconf_rb", true))
+                            {
+                                if (firsthave)
+                                    save += ",";
+                                save += "reboot";
+                                firsthave = true;
+                            }
+                            if (SaveSystemAlt.GetBool("Gconf_ex", false))
+                            {
+                                if (firsthave)
+                                    save += ",";
+                                save += "exit";
+                                firsthave = true;
+                            }
+                        }
+                        else
+                            save = "#no showtools";
+                    }
+                    else
+                        save = configsc.text[i];
+                    tosave.Add(save);
+                }
+
+                if (!FilesSet.CheckFile(FastFind.GetDefaultPath() + "/SLywnow/rEFInd theme editor/projects/" + newthemename.text + "/theme.conf"))
+                    FilesSet.SaveStream(FastFind.GetDefaultPath() + "/SLywnow/rEFInd theme editor/projects/" + newthemename.text + "/theme.conf", tosave.ToArray());
+
+                newthemename.text = "";
+                newtheme.SetActive(false);
+                GetProjects();
+            }
+        }
+	}
+
+    public void ReOpen()
+	{
+        for (int i = prevopt.osscroll.childCount - 1; i >= 0; i--)
+        {
+            Destroy(prevopt.osscroll.GetChild(i).gameObject);
+        }
+        for (int i = prevopt.funcscroll.childCount - 1; i >= 0; i--)
+        {
+            Destroy(prevopt.funcscroll.GetChild(i).gameObject);
+        }
+        scene.bg.sprite = prew.defbg;
+        config.bigicon.text = "0";
+        config.smallicon.text = "0";
+
+        string curdir = curProj.dir;
+
+        curProj = new ProjectFiles();
+        prevopt.functog = new List<Toggle>();
+        prevopt.ostog = new List<Toggle>();
+
+        curProj.dir = curdir;
+
+        //load structure
+        //load bg
+        if (FilesSet.CheckFile(curProj.dir + "/background.png", false))
+        {
+            FileStream streamimg = File.Open(curProj.dir + "/background.png", FileMode.Open);
+            byte[] imgbt = new byte[streamimg.Length];
+            streamimg.Read(imgbt, 0, imgbt.Length);
+            streamimg.Close();
+
+            Texture2D imgtex = new Texture2D(0, 0);
+            imgtex.LoadImage(imgbt);
+            curProj.bg = Sprite.Create(imgtex, new Rect(0.0f, 0.0f, imgtex.width, imgtex.height), new Vector2(0.5f, 0.5f));
+        }
+        else
+        {
+            curProj.bg = prew.defbg;
+        }
+        //load sel
+        if (FilesSet.CheckFile(curProj.dir + "/selection_big.png", false))
+        {
+            FileStream streamimg = File.Open(curProj.dir + "/selection_big.png", FileMode.Open);
+            byte[] imgbt = new byte[streamimg.Length];
+            streamimg.Read(imgbt, 0, imgbt.Length);
+            streamimg.Close();
+
+            Texture2D imgtex = new Texture2D(0, 0);
+            imgtex.LoadImage(imgbt);
+            curProj.b_select = Sprite.Create(imgtex, new Rect(0.0f, 0.0f, imgtex.width, imgtex.height), new Vector2(0.5f, 0.5f));
+        }
+        else
+        {
+            curProj.b_select = prew.defsel;
+        }
+        if (FilesSet.CheckFile(curProj.dir + "/selection_small.png", false))
+        {
+            FileStream streamimg = File.Open(curProj.dir + "/selection_small.png", FileMode.Open);
+            byte[] imgbt = new byte[streamimg.Length];
+            streamimg.Read(imgbt, 0, imgbt.Length);
+            streamimg.Close();
+
+            Texture2D imgtex = new Texture2D(0, 0);
+            imgtex.LoadImage(imgbt);
+            curProj.l_select = Sprite.Create(imgtex, new Rect(0.0f, 0.0f, imgtex.width, imgtex.height), new Vector2(0.5f, 0.5f));
+        }
+        else
+        {
+            curProj.l_select = prew.defsel;
+        }
+        //load ico
+        string[] icons = null;
+        if (FilesSet.CheckDirectory(curProj.dir + "/icons"))
+        {
+            icons = FilesSet.GetFilesFromdirectories(curProj.dir + "/icons", "png", false, FilesSet.TypeOfGet.NamesOfFiles);
+            for (int a = 0; a < icons.Length; a++)
+            {
+                if (icons[a].IndexOf("os_") >= 0)
+                {
+                    FileStream streamimg = File.Open(curProj.dir + "/icons/" + icons[a] + ".png", FileMode.Open);
+                    byte[] imgbt = new byte[streamimg.Length];
+                    streamimg.Read(imgbt, 0, imgbt.Length);
+                    streamimg.Close();
+
+                    Texture2D imgtex = new Texture2D(0, 0);
+                    imgtex.LoadImage(imgbt);
+                    curProj.oss.Add(Sprite.Create(imgtex, new Rect(0.0f, 0.0f, imgtex.width, imgtex.height), new Vector2(0.5f, 0.5f)));
+                    curProj.ossp.Add(icons[a].Replace("os_", ""));
+                }
+                if (icons[a].IndexOf("func_") >= 0)
+                {
+                    FileStream streamimg = File.Open(curProj.dir + "/icons/" + icons[a] + ".png", FileMode.Open);
+                    byte[] imgbt = new byte[streamimg.Length];
+                    streamimg.Read(imgbt, 0, imgbt.Length);
+                    streamimg.Close();
+
+                    Texture2D imgtex = new Texture2D(0, 0);
+                    imgtex.LoadImage(imgbt);
+                    curProj.funcs.Add(Sprite.Create(imgtex, new Rect(0.0f, 0.0f, imgtex.width, imgtex.height), new Vector2(0.5f, 0.5f)));
+                    curProj.funcsp.Add(icons[a].Replace("func_", ""));
+                }
+            }
+        }
+
+        //get theme.conf
+        if (FilesSet.CheckFile(curProj.dir + "/theme.conf", false))
+        {
+            List<string> conf = FilesSet.LoadStream(curProj.dir + "/theme.conf", false).ToList();
+            for (int c = 0; c < conf.Count; c++)
+            {
+                if (!((conf[c].IndexOf("#")) >= 0) && (conf[c].IndexOf("big_icon_size ") >= 0)) curProj.bigicon = int.Parse(conf[c].Replace("big_icon_size ", ""));
+                if (!((conf[c].IndexOf("#")) >= 0) && (conf[c].IndexOf("small_icon_size ") >= 0)) curProj.smallicon = int.Parse(conf[c].Replace("small_icon_size ", ""));
+            }
+            if (curProj.bigicon == 0)
+                curProj.bigicon = 256;
+            if (curProj.smallicon == 0)
+                curProj.smallicon = 96;
+        }
+        else
+        {
+            curProj.bigicon = 256;
+            curProj.smallicon = 96;
+        }
+
+        //setup workspace
+        scene.bg.sprite = curProj.bg;
+        prevopt.screenX.text = Screen.width + "";
+        prevopt.screenY.text = Screen.height + "";
+        prevopt.selbig.sprite = curProj.b_select;
+        prevopt.selsmall.sprite = curProj.l_select;
+        prevopt.bgimg.sprite = curProj.bg;
+
+        for (int o = 0; o < curProj.oss.Count; o++)
+        {
+            GameObject obj = Instantiate(prevopt.togpresset, prevopt.osscroll);
+            obj.SetActive(true);
+            FastFind.FindChild(obj.transform, "Icon").GetComponent<Image>().sprite = curProj.oss[o];
+            FastFind.FindChild(obj.transform, "Name").GetComponent<Text>().text = curProj.ossp[o];
+            obj.GetComponent<ProjPrevToggle>().i = o;
+            obj.GetComponent<ProjPrevToggle>().tpe = ProjPrevToggle.tp.os;
+            prevopt.ostog.Add(obj.GetComponent<Toggle>());
+        }
+        for (int f = 0; f < curProj.funcs.Count; f++)
+        {
+            GameObject obj = Instantiate(prevopt.togpresset, prevopt.funcscroll);
+            obj.SetActive(true);
+            FastFind.FindChild(obj.transform, "Icon").GetComponent<Image>().sprite = curProj.funcs[f];
+            FastFind.FindChild(obj.transform, "Name").GetComponent<Text>().text = curProj.funcsp[f];
+            obj.GetComponent<ProjPrevToggle>().i = f;
+            obj.GetComponent<ProjPrevToggle>().tpe = ProjPrevToggle.tp.func;
+            prevopt.functog.Add(obj.GetComponent<Toggle>());
+        }
+
     }
 
     public void GetProject(int i)
@@ -152,12 +426,13 @@ public class MakePreset : MonoBehaviour
 
         //setup workspace
         scene.bg.sprite = curProj.bg;
-        prevopt.bigicon.text = curProj.bigicon+"";
-        prevopt.smallicon.text = curProj.smallicon + "";
+        config.bigicon.text = curProj.bigicon+"";
+        config.smallicon.text = curProj.smallicon + "";
         prevopt.screenX.text = Screen.width + "";
         prevopt.screenY.text = Screen.height + "";
         prevopt.selbig.sprite = curProj.b_select;
         prevopt.selsmall.sprite = curProj.l_select;
+        prevopt.bgimg.sprite = curProj.bg;
 
         for (int o=0;o< curProj.oss.Count;o++)
         {
@@ -196,8 +471,8 @@ public class MakePreset : MonoBehaviour
             Destroy(prevopt.funcscroll.GetChild(i).gameObject);
         }
         scene.bg.sprite = prew.defbg;
-        prevopt.bigicon.text = "0";
-        prevopt.smallicon.text = "0";
+        config.bigicon.text = "0";
+        config.smallicon.text = "0";
 
 
 
@@ -581,12 +856,11 @@ public class ProjectFiles
 [System.Serializable]
 public class SceneOptions
 {
-    public InputField bigicon;
-    public InputField smallicon;
     public InputField screenX;
     public InputField screenY;
     public Image selbig;
     public Image selsmall;
+    public Image bgimg;
     public List<Toggle> ostog;
     public List<Toggle> functog;
     public Transform osscroll;
@@ -601,6 +875,17 @@ public class SceneSetUp
     public Transform paros;
     public Transform parfunc;
     public GameObject img;
+}
+
+[System.Serializable]
+public class Configproj
+{
+    public GameObject configobj;
+    public InputField bigicon;
+    public InputField smallicon;
+    public Toggle shutdown;
+    public Toggle reboot;
+    public Toggle exit;
 }
 
 [System.Serializable]
