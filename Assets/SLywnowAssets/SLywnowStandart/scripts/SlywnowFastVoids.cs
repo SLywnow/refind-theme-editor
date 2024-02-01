@@ -4,6 +4,8 @@ using System.IO;
 using System;
 using System.Linq;
 using Random = UnityEngine.Random;
+using UnityEngine.UI;
+using UnityEngine.Networking;
 
 namespace SLywnow
 {
@@ -91,6 +93,92 @@ namespace SLywnow
 		}*/
 
 		/// <summary>
+		/// Loading some bytes from path
+		/// </summary>
+		/// <param name="path">Path to load ("/" automaticly added)</param>
+		/// <param name="name">Name of file</param>
+		/// <param name="format">Format of file</param>
+		/// <param name="datapath">Added Application.persistentDataPath to path ("/" automaticly added)</param>
+		/// <returns>Returns all lines from file</returns>
+		public static byte[] LoadByte(string path, string name, string format, bool datapath = false)
+		{
+			byte[] ret = new byte[0];
+			string link = path;
+			if (datapath) link = Application.persistentDataPath + "/" + path;
+			FileInfo fi = new FileInfo(link + "/" + name + "." + format);
+			if (!fi.Directory.Exists) return null;
+			FileStream sr = File.Open(link + "/" + name + "." + format, FileMode.Open);
+			List<string> lt = new List<string>();
+			if (fi.Exists)
+			{
+				ret = new byte[sr.Length];
+				sr.Read(ret, 0, ret.Length);
+				sr.Close();
+			}
+			else
+			{
+				sr.Close();
+				return null;
+			}
+			return ret;
+		}
+
+		/// <summary>
+		/// Loading some bytes from path
+		/// </summary>
+		/// <param name="path">Path to load</param>
+		/// <param name="datapath">Added Application.persistentDataPath to path ("/" automaticly added)</param>
+		/// <returns>Returns all lines from file</returns>
+		public static byte[] LoadByte(string path, bool datapath = false)
+		{
+			byte[] ret = new byte[0];
+			string link = path;
+			if (datapath) link = Application.persistentDataPath + "/" + path;
+			FileInfo fi = new FileInfo(link);
+			if (!fi.Directory.Exists) return null;
+			FileStream sr = File.Open(link, FileMode.Open);
+			List<string> lt = new List<string>();
+			if (fi.Exists)
+			{
+				ret = new byte[sr.Length];
+				sr.Read(ret, 0, ret.Length);
+				sr.Close();
+			}
+			else
+			{
+				sr.Close();
+				return null;
+			}
+			return ret;
+		}
+
+		/// <summary>
+		/// Save some bytes array to path
+		/// </summary>
+		/// <param name="path">Path to save ("/" automaticly added)</param>
+		/// <param name="name">Name of file</param>
+		/// <param name="format">Format of file</param>
+		/// <param name="saves">Bytes to save</param>
+		/// <param name="datapath">Added Application.persistentDataPath to path ("/" automaticly added)</param>
+		public static void SaveByte(string path, string name, string format, byte[] saves, bool datapath = false)
+		{
+			string link = path;
+			if (datapath) link = Application.persistentDataPath + "/" + path;
+			FileInfo fi = new FileInfo(link + "/" + name + "." + format);
+			if (!fi.Directory.Exists) Directory.CreateDirectory(fi.Directory.FullName);
+			File.WriteAllBytes(link, saves);
+		}
+
+		public static void SaveByte(string path, byte[] saves, bool datapath = false)
+		{
+			string link = path;
+			if (datapath) link = Application.persistentDataPath + "/" + path;
+			FileInfo fi = new FileInfo(link);
+			if (!fi.Directory.Exists) Directory.CreateDirectory(fi.Directory.FullName);
+			File.WriteAllBytes(link, saves);
+		}
+
+		/// <summary>
 		/// Save some strings to path
 		/// </summary>
 		/// <param name="path">Path to save ("/" automaticly added)</param>
@@ -104,7 +192,7 @@ namespace SLywnow
 			string link = path;
 			if (datapath) link = Application.persistentDataPath + "/" + path;
 			FileInfo fi = new FileInfo(link + "/" + name + "." + format);
-			if (!fi.Directory.Exists) Directory.CreateDirectory(link);
+			if (!fi.Directory.Exists) Directory.CreateDirectory(fi.Directory.FullName);
 			StreamWriter sw = new StreamWriter(link + "/" + name + "." + format);
 			if (!fi.Exists) fi.Create();
 			if (saves.Length > 0)
@@ -127,7 +215,7 @@ namespace SLywnow
 			string link = path;
 			if (datapath) link = Application.persistentDataPath + "/" + path;
 			FileInfo fi = new FileInfo(link);
-			if (!fi.Directory.Exists) Directory.CreateDirectory(link);
+			if (!fi.Directory.Exists) Directory.CreateDirectory(fi.Directory.FullName);
 			StreamWriter sw = new StreamWriter(link);
 			if (!fi.Exists) fi.Create();
 			if (saves.Length > 0)
@@ -151,7 +239,7 @@ namespace SLywnow
 			string link = path;
 			if (datapath) link = Application.persistentDataPath + "/" + path;
 			FileInfo fi = new FileInfo(link + "/" + name + "." + format);
-			if (!fi.Directory.Exists) Directory.CreateDirectory(link);
+			if (!fi.Directory.Exists) Directory.CreateDirectory(fi.Directory.FullName);
 			StreamWriter sw = new StreamWriter(link + "/" + name + "." + format);
 			if (!fi.Exists) fi.Create();
 			if (!string.IsNullOrEmpty(save))
@@ -173,7 +261,7 @@ namespace SLywnow
 			string link = path;
 			if (datapath) link = Application.persistentDataPath + "/" + path;
 			FileInfo fi = new FileInfo(link);
-			if (!fi.Directory.Exists) Directory.CreateDirectory(link);
+			if (!fi.Directory.Exists) Directory.CreateDirectory(fi.Directory.FullName);
 			StreamWriter sw = new StreamWriter(link);
 			if (!fi.Exists) fi.Create();
 			if (!string.IsNullOrEmpty(save))
@@ -207,7 +295,11 @@ namespace SLywnow
 				sr.Close();
 				ret = lt.ToArray();
 			}
-			else return null;
+			else
+			{
+				sr.Close();
+				return null;
+			}
 			return ret;
 		}
 
@@ -232,7 +324,11 @@ namespace SLywnow
 				sr.Close();
 				ret = lt.ToArray();
 			}
-			else return null;
+			else
+			{
+				sr.Close();
+				return null;
+			}
 			return ret;
 		}
 
@@ -255,11 +351,15 @@ namespace SLywnow
 			if (fi.Exists)
 			{
 				ret = "";
-				if (!onlyoneline) while (!sr.EndOfStream) ret+= sr.ReadLine();
+				if (!onlyoneline) while (!sr.EndOfStream) ret += sr.ReadLine();
 				else ret = sr.ReadLine();
 				sr.Close();
 			}
-			else return null;
+			else
+			{
+				sr.Close();
+				return null;
+			}
 			return ret;
 		}
 
@@ -280,13 +380,146 @@ namespace SLywnow
 			if (fi.Exists)
 			{
 				ret = "";
-				if (!onlyoneline) while (!sr.EndOfStream) ret += sr.ReadLine();
-				else ret = sr.ReadLine();
+				if (!onlyoneline) while (!sr.EndOfStream) ret += sr.ReadLine() + "\n";
+				else while (!sr.EndOfStream) ret += sr.ReadLine();
 				sr.Close();
 			}
-			else return null;
+			else
+			{
+				sr.Close();
+				return null;
+			}
 			return ret;
 		}
+
+		public static Sprite LoadSprite(string path, string name, string format, bool datapath = false)
+		{
+			try
+			{
+				byte[] bytes = LoadByte(path, name, format, datapath);
+				Texture2D t2 = EasyDo.byteToTexture(bytes);
+
+				Sprite ret = Sprite.Create(t2, new Rect(0.0f, 0.0f, t2.width, t2.height), new Vector2(0.5f, 0.5f));
+				return ret;
+			}
+			catch
+			{
+				return null;
+			}
+		}
+
+		public static Sprite LoadSprite(string path, bool datapath = false)
+		{
+			try
+			{
+				byte[] bytes = LoadByte(path, datapath);
+				Texture2D t2 = EasyDo.byteToTexture(bytes);
+
+				Sprite ret = Sprite.Create(t2, new Rect(0.0f, 0.0f, t2.width, t2.height), new Vector2(0.5f, 0.5f));
+				return ret;
+			}
+			catch
+			{
+				return null;
+			}
+		}
+
+		public enum TextureType { png,jpg}
+		public static void SaveTexture(Texture2D input, string path, TextureType format, string name, string save, bool datapath = false)
+		{
+			if (input == null) return;
+
+			string link = "";
+			if (datapath) path = Application.persistentDataPath + "/" + path;
+			link = path + "/" + name + ".";
+			if (format == TextureType.png)
+				link += "png";
+			if (format == TextureType.jpg)
+				link += "jpg";
+
+			byte[] sv = new byte[0];
+			if (format == TextureType.png)
+				sv = input.EncodeToPNG();
+			if (format == TextureType.jpg)
+				sv = input.EncodeToJPG();
+
+			File.WriteAllBytes(link, sv);
+		}
+
+		public static void SaveTexture(Texture2D input, string path, TextureType format, bool datapath = false)
+		{
+			if (input == null) return;
+
+			string link = "";
+			if (datapath) path = Application.persistentDataPath + "/" + path;
+			link = path;
+
+			FileInfo fi = new FileInfo(link);
+
+			byte[] sv = new byte[0];
+			if (format == TextureType.png)
+				sv = input.EncodeToPNG();
+			if (format == TextureType.jpg)
+				sv = input.EncodeToJPG();
+
+			File.WriteAllBytes(link, sv);
+		}
+
+		/*
+		public static AudioClip LoadAudio(string path, AudioType type=AudioType.MPEG)
+		{
+			AudioClip ret= null;
+
+			UnityWebRequest www = UnityWebRequestMultimedia.GetAudioClip(path, type);
+
+			while (!www.isDone || www.isNetworkError || www.isHttpError)
+			{ int a = 0; }
+
+			return DownloadHandlerAudioClip.GetContent(www);
+
+		}
+
+		
+		public static void SaveAudio(AudioClip input, string path, string name, string save, bool datapath = false)
+		{
+			if (input == null) return;
+
+			string link = "";
+			if (datapath) path = Application.persistentDataPath + "/" + path;
+			link = path + "/" + name + ".wav";
+			
+			float[] fl = new float[input.samples * input.channels];
+			input.GetData(fl, 0);
+			List<byte> bt = new List<byte>();
+			for (int i=0;i<fl.Length;i++)
+			{
+				bt.AddRange(BitConverter.GetBytes(fl[i]).ToList());
+			}
+			byte[] sv = bt.ToArray();
+
+			File.WriteAllBytes(link, sv);
+		}
+		public static void SaveAudio(AudioClip input, string path, bool datapath = false)
+		{
+			if (input == null) return;
+
+			string link = "";
+			if (datapath) path = Application.persistentDataPath + "/" + path;
+			link = path;
+
+			FileInfo fi = new FileInfo(link);
+
+			float[] fl = new float[input.samples * input.channels];
+			input.GetData(fl, 0);
+			List<byte> bt = new List<byte>();
+			for (int i = 0; i < fl.Length; i++)
+			{
+				bt.AddRange(BitConverter.GetBytes(fl[i]).ToList());
+			}
+			byte[] sv = bt.ToArray();
+
+			File.WriteAllBytes(link, sv);
+		}*/
 
 		/// <summary>
 		/// Checking file in path
@@ -380,8 +613,8 @@ namespace SLywnow
 			string[] str = new string[0];
 			string[] dir = new string[0];
 			string[] fil = new string[0];
-			if (!(type == TypeOfGet.Files)) dir = Directory.GetDirectories(link);
-			if (!(type == TypeOfGet.Directory)) {
+			if (!(type == TypeOfGet.Files || type == TypeOfGet.NamesOfFiles || type == TypeOfGet.Formats || type == TypeOfGet.NamesOfFilesWithFormat)) dir = Directory.GetDirectories(link);
+			if (!(type == TypeOfGet.Directory || type == TypeOfGet.NamesOfDirectories)) {
 				if (!string.IsNullOrEmpty(format)) fil = Directory.GetFiles(link, "*." + format);
 				else fil = Directory.GetFiles(link);
 			}
@@ -393,19 +626,8 @@ namespace SLywnow
 			{
 				for (int i = 0; i < fil.Length; i++)
 				{
-					fil[i] = fil[i].Replace(link + "\\", "");
-					if (!string.IsNullOrEmpty(format))
-						fil[i] = fil[i].Replace("."+format, "");
-					else
-					{
-						for (int c = fil[i].Length; c >= 0; c--)
-						{
-							if (!(fil[i][c] == '.'))
-								fil[i] = fil[i].Remove(c);
-							else
-							{ fil[i] = fil[i].Remove(c); break; }
-						}
-					}
+					
+					fil[i] = Path.GetFileNameWithoutExtension(fil[i]);
 				}
 				str = fil;
 			}
@@ -413,14 +635,7 @@ namespace SLywnow
 			{
 				for (int i = 0; i < fil.Length; i++)
 				{
-					fil[i] = fil[i].Replace(link + "\\", "");
-					for (int c = fil[i].Length; c >= 0; c--)
-					{
-						if (!(fil[i][c] == '.'))
-							fil[i] = fil[i].Remove(c);
-						else
-						{ fil[i] = fil[i].Remove(c); break; }
-					}
+					fil[i]  = Path.GetExtension(fil[i]);
 				}
 				str = fil;
 			}
@@ -428,7 +643,7 @@ namespace SLywnow
 			{
 				for (int i = 0; i < fil.Length; i++)
 				{
-					fil[i] = fil[i].Replace(link + "\\", "");
+					fil[i] = Path.GetFileName(fil[i]);
 				}
 				str = fil;
 			}
@@ -436,7 +651,12 @@ namespace SLywnow
 			{
 				for (int i = 0; i < dir.Length; i++)
 				{
-					dir[i] = dir[i].Replace(link + "\\", "");
+					//Debug.Log(dir[i]);
+					//Debug.Log(link);
+					dir[i] = Path.GetFileName(dir[i]);
+					//dir[i] = dir[i].Replace(link + "\\", "");
+					//dir[i] = dir[i].Replace(link + "/", "");
+					//Debug.Log(dir[i]);
 				}
 				str = dir;
 			}
@@ -470,12 +690,51 @@ namespace SLywnow
 			Directory.CreateDirectory(link);
 		}
 
-	private struct MARGINS
+		/// <summary>
+		/// Rename some file in directory
+		/// </summary>
+		/// <param name="path">Path of file</param>
+		/// <param name="oldName">Old name of file</param>
+		/// <param name="newName">New name of file</param>
+		public static void RenameFile(string path, string oldName, string newName)
 		{
-			public int cxLeftWidth;
-			public int cxRightWidth;
-			public int cyTopHeight;
-			public int cyBottomHeight;
+			if (path[path.Length - 1] != '\\' || path[path.Length - 1] != '/')
+				path += "/";
+
+			File.Move(path + oldName, path + newName);
+		}
+
+		/// <summary>
+		/// Copy all files in directory in subdirectories to new directory (with create)
+		/// </summary>
+		/// <param name="sourceDirectory">Directory that will be copied</param>
+		/// <param name="targetDirectory">New directory</param>
+		public static void CopyFullDirectory(string sourceDirectory, string targetDirectory)
+		{
+			var diSource = new DirectoryInfo(sourceDirectory);
+			var diTarget = new DirectoryInfo(targetDirectory);
+
+			CopyAll(diSource, diTarget);
+		}
+
+		static void CopyAll(DirectoryInfo source, DirectoryInfo target)
+		{
+			Directory.CreateDirectory(target.FullName);
+
+			// Copy each file into the new directory.
+			foreach (FileInfo fi in source.GetFiles())
+			{
+				Console.WriteLine(@"Copying {0}\{1}", target.FullName, fi.Name);
+				fi.CopyTo(Path.Combine(target.FullName, fi.Name), true);
+			}
+
+			// Copy each subdirectory using recursion.
+			foreach (DirectoryInfo diSourceSubDir in source.GetDirectories())
+			{
+				DirectoryInfo nextTargetSubDir =
+					target.CreateSubdirectory(diSourceSubDir.Name);
+				CopyAll(diSourceSubDir, nextTargetSubDir);
+			}
 		}
 	}
 
@@ -675,8 +934,41 @@ namespace SLywnow
 		}
 	}
 
-	public class EasyDo : MonoBehaviour
+	public static class EasyDo 
 	{
+
+		public static string RandomString(int length, string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789")
+		{
+			System.Random rnd = new System.Random();
+
+			return new string(Enumerable.Repeat(chars, length)
+				.Select(s => s[rnd.Next(s.Length)]).ToArray());
+		}
+
+		public static Texture2D byteToTexture(byte[] input)
+		{
+			Texture2D output = new Texture2D(0, 0);
+			output.LoadImage(input);
+			return output;
+		}
+
+		/*
+		public static AudioClip byteToAudio(byte[] input, string name="SLB_Audio",int frequency= 44100)
+		{
+			float[] floatArr = new float[input.Length / 4];
+			for (int i = 0; i < floatArr.Length; i++)
+			{
+				if (BitConverter.IsLittleEndian)
+					Array.Reverse(input, i * 4, 4);
+				floatArr[i] = BitConverter.ToSingle(input, i * 4) / 0x80000000;
+			}
+
+
+			AudioClip output = AudioClip.Create(name, floatArr.Length, 1, frequency, false);
+			output.SetData(floatArr, 0);
+			return output;
+		}*/
+
 		public static List<List<T>> RemoveIndex<T>(List<List<T>> tomove, List<int> indexs, int index, int newplace)
 		{
 			int i = indexs.IndexOf(index);
@@ -840,18 +1132,23 @@ namespace SLywnow
 		/// <param name="url">url to string</param>
 		/// <param name="maxtime">Maximum time to wait</param>
 		/// <returns>Returns string from url</returns>
-		public static Texture GetWWWTexture2D(string url, bool unlimited = false, float maxtime = 1000f)
+		public static Texture GetWWWTexture(string url, bool unlimited = false, float maxtime = 1000f)
 		{
-			
 			WWW www = new WWW(url);
 			float time = 0;
 			while (!www.isDone)
 			{
-				if (!string.IsNullOrEmpty(www.error)) return null;
+				if (!string.IsNullOrEmpty(www.error))
+				{
+					return null;
+				}
 				if (!unlimited)
 				{
 					time += Time.deltaTime;
-					if (time > maxtime) return null;
+					if (time > maxtime)
+					{
+						return null;
+					}
 				}
 				else continue;
 			}
@@ -939,10 +1236,150 @@ namespace SLywnow
 			return wrapper.array;
 		}
 
+		/// <summary>
+		/// Shuffle some list
+		/// </summary>
+		public static void Shuffle<T>(this List<T> list)
+		{
+			for (var i = list.Count-1; i >= 0; i--)
+				Swap(list, i, Random.Range(0, list.Count-1));
+		}
+
+		public static void Swap<T>(this List<T> list, int i, int j)
+		{
+			var temp = list[i];
+			list[i] = list[j];
+			list[j] = temp;
+		}
+
 		[System.Serializable]
 		private class Wrapper<T>
 		{
 			public T[] array;
+		}
+
+	}
+
+	//based on https://www.codeproject.com/Articles/11016/Numeric-String-Sort-in-C
+	public class StringLogicalComparer
+	{
+		public static int Compare(string s1, string s2)
+		{
+			//get rid of special cases
+			if ((s1 == null) && (s2 == null)) return 0;
+			else if (s1 == null) return -1;
+			else if (s2 == null) return 1;
+
+			if ((s1.Equals(string.Empty) && (s2.Equals(string.Empty)))) return 0;
+			else if (s1.Equals(string.Empty)) return -1;
+			else if (s2.Equals(string.Empty)) return -1;
+
+			//WE style, special case
+			bool sp1 = Char.IsLetterOrDigit(s1, 0);
+			bool sp2 = Char.IsLetterOrDigit(s2, 0);
+			if (sp1 && !sp2) return 1;
+			if (!sp1 && sp2) return -1;
+
+			int i1 = 0, i2 = 0; //current index
+			int r = 0; // temp result
+			while (true)
+			{
+				bool c1 = Char.IsDigit(s1, i1);
+				bool c2 = Char.IsDigit(s2, i2);
+				if (!c1 && !c2)
+				{
+					bool letter1 = Char.IsLetter(s1, i1);
+					bool letter2 = Char.IsLetter(s2, i2);
+					if ((letter1 && letter2) || (!letter1 && !letter2))
+					{
+						if (letter1 && letter2)
+						{
+							r = Char.ToLower(s1[i1]).CompareTo(Char.ToLower(s2[i2]));
+						}
+						else
+						{
+							r = s1[i1].CompareTo(s2[i2]);
+						}
+						if (r != 0) return r;
+					}
+					else if (!letter1 && letter2) return -1;
+					else if (letter1 && !letter2) return 1;
+				}
+				else if (c1 && c2)
+				{
+					r = CompareNum(s1, ref i1, s2, ref i2);
+					if (r != 0) return r;
+				}
+				else if (c1)
+				{
+					return -1;
+				}
+				else if (c2)
+				{
+					return 1;
+				}
+				i1++;
+				i2++;
+				if ((i1 >= s1.Length) && (i2 >= s2.Length))
+				{
+					return 0;
+				}
+				else if (i1 >= s1.Length)
+				{
+					return -1;
+				}
+				else if (i2 >= s2.Length)
+				{
+					return -1;
+				}
+			}
+		}
+
+		private static int CompareNum(string s1, ref int i1, string s2, ref int i2)
+		{
+			int nzStart1 = i1, nzStart2 = i2; // nz = non zero
+			int end1 = i1, end2 = i2;
+
+			ScanNumEnd(s1, i1, ref end1, ref nzStart1);
+			ScanNumEnd(s2, i2, ref end2, ref nzStart2);
+			int start1 = i1; i1 = end1 - 1;
+			int start2 = i2; i2 = end2 - 1;
+
+			int nzLength1 = end1 - nzStart1;
+			int nzLength2 = end2 - nzStart2;
+
+			if (nzLength1 < nzLength2) return -1;
+			else if (nzLength1 > nzLength2) return 1;
+
+			for (int j1 = nzStart1, j2 = nzStart2; j1 <= i1; j1++, j2++)
+			{
+				int r = s1[j1].CompareTo(s2[j2]);
+				if (r != 0) return r;
+			}
+			// the nz parts are equal
+			int length1 = end1 - start1;
+			int length2 = end2 - start2;
+			if (length1 == length2) return 0;
+			if (length1 > length2) return -1;
+			return 1;
+		}
+
+		//lookahead
+		private static void ScanNumEnd(string s, int start, ref int end, ref int nzStart)
+		{
+			nzStart = start;
+			end = start;
+			bool countZeros = true;
+			while (Char.IsDigit(s, end))
+			{
+				if (countZeros && s[end].Equals('0'))
+				{
+					nzStart++;
+				}
+				else countZeros = false;
+				end++;
+				if (end >= s.Length) break;
+			}
 		}
 
 	}

@@ -1,19 +1,17 @@
-﻿using SFB;
-using SLywnow;
+﻿using SLywnow;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
+using SimpleFileBrowser;
+using AutoLangSLywnow;
+using UnityEngine.Events;
 
 public class PresetSelect : MonoBehaviour
 {
     public MakePreset sc;
 	public List<PresetSelectIcon> icons;
-	
-	public string path;
-	public string to;
-	public int curid;
 
 	public void OpenSelect()
 	{
@@ -45,20 +43,44 @@ public class PresetSelect : MonoBehaviour
 
 	public void SelectPNG(int id)
 	{
-		to = sc.curProj.dir;
-		if (!icons[id].nonicon)
-			to += "/icons";
-		to += "/" + icons[id].filename + ".png";
+		
+
+		StartCoroutine(GetFile(id));
+		/*to = sc.curProj.dir;
+
 		var extensions = new[] {
 				new ExtensionFilter("Image Files", "png" ),
 			};
 		curid = id;
 		string[] str = StandaloneFileBrowser.OpenFilePanel("Select " + icons[id].filename, sc.curProj.dir, extensions, false);
 		if (str.Length>0)
-		path = str[0];
+		path = str[0];*/
 	}
 
-	public void Update()
+	public IEnumerator GetFile(int id)
+	{
+		FileBrowser.SetFilters(false, new FileBrowser.Filter("PNG", ".png"));
+
+		yield return FileBrowser.WaitForLoadDialog(FileBrowser.PickMode.Files, false, FastFind.GetDefaultPath(), null, "Select " + icons[id].filename, "Select");
+		
+		if (FileBrowser.Success)
+		{
+			string to = sc.curProj.dir;
+			if (!icons[id].nonicon)
+				to += "/icons";
+			to += "/" + icons[id].filename + ".png";
+
+			string path = FileBrowser.Result[0];
+
+			if (!FilesSet.CheckDirectory(sc.curProj.dir + "/icons/")) FilesSet.CreateDirectory(sc.curProj.dir + "/icons/");
+
+			File.Copy(path, to, true);
+
+			UpdateAll(id);
+		}
+	}
+
+	/*public void Update()
 	{
 		if (!string.IsNullOrEmpty(path))
 		{
@@ -75,7 +97,7 @@ public class PresetSelect : MonoBehaviour
 				curid = 0;
 			}
 		}
-	}
+	}*/
 
 	public void UpdateAll (int id)
 	{

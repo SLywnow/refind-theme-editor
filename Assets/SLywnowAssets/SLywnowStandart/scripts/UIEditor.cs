@@ -17,7 +17,7 @@ namespace SLywnow
 		/// <param name="pivotX">Pivot's X cord what you need, default 0.5</param>
 		/// <param name="pivotY">Pivot's Y cord what you need, default 0.5</param>
 		/// <returns></returns>
-		public static Sprite GetTextureWithColor(Color color, int width = 1, int height = 1, float pivotX = 0.5f, float pivotY = 0.5f)
+		public static Sprite GetSpriteWithColor(Color color, int width = 1, int height = 1, float pivotX = 0.5f, float pivotY = 0.5f)
 		{
 			Texture2D imgcol = new Texture2D(width, height, TextureFormat.RGBA32, false);
 			for (int x = 0; x < width; x++) for (int y = 0; y < height; y++)
@@ -40,6 +40,40 @@ namespace SLywnow
 					imgcol.SetPixel(x, y, color);
 			imgcol.Apply();
 			return imgcol;
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="gradient">Gradient</param>
+		/// <param name="Xdirection">Is gradient will be in X dir?</param>
+		/// <param name="width">Width what you need, default 1</param>
+		/// <param name="height">Height what you need, default 1</param>
+		/// <param name="pivotX">Pivot's X cord what you need, default 0.5</param>
+		/// <param name="pivotY">Pivot's Y cord what you need, default 0.5</param>
+		/// <returns></returns>
+		public static Sprite GetSpriteWithGradient(Gradient gradient, bool Xdirection, int width = 1, int height = 1, float pivotX = 0.5f, float pivotY = 0.5f)
+		{
+			Texture2D imgcol = new Texture2D(width, height, TextureFormat.RGBA32, false);
+			for (int x = 0; x < width; x++) for (int y = 0; y < height; y++)
+					imgcol.SetPixel(x, y, Xdirection ? gradient.Evaluate((float)x / width) : gradient.Evaluate((float)y / height));
+			imgcol.Apply();
+			return Sprite.Create(imgcol, new Rect(0.0f, 0.0f, imgcol.width, imgcol.height), new Vector2(pivotX, pivotY));
+		}
+
+		public static Sprite GetSpriteWithGradient2D(Gradient gradientX, Gradient gradientY, int width = 1, int height = 1, float pivotX = 0.5f, float pivotY = 0.5f)
+		{
+			Texture2D imgcol = new Texture2D(width, height, TextureFormat.RGBA32, false);
+			for (int x = 0; x < width; x++) for (int y = 0; y < height; y++) 
+				{
+					Color cX = gradientX.Evaluate((float)x / width);
+					Color cY = gradientY.Evaluate((float)y / height);
+					Color c = (cX + cY) / 2;
+					
+					imgcol.SetPixel(x, y, c);
+				}
+			imgcol.Apply();
+			return Sprite.Create(imgcol, new Rect(0.0f, 0.0f, imgcol.width, imgcol.height), new Vector2(pivotX, pivotY));
 		}
 
 		/// <summary>
@@ -222,19 +256,6 @@ namespace SLywnow
 					output = bool.Parse(inp[pos]);
 
 			return output;
-		}
-
-		public enum PositionInHierarchyVector {vertical, horizontal };
-		public static void SetPositionInHierarchy(Transform parent, GameObject moved, PositionInHierarchyVector vectors, 
-			bool movetoparent, bool usesizes = true)
-		{
-			int top=0;
-			int bottom = 0;
-			if (vectors==PositionInHierarchyVector.vertical)
-			{
-				top = Screen.height;
-				bottom = 0;
-			}
 		}
 	}
 }

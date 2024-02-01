@@ -1,0 +1,203 @@
+Основа:
+AutoLang Asset - easy to use multilingual asset.
+
+Разделы:
+SetUp in Editor
+Scripting
+Custom translate from your fans 
+
+SetUp in Editor:
+
+Run GUI interface pressing SLywnow=> AutoLang SetUp
+
+In here you can adding keyword, languages, words for all languages and setup asset data.
+
+Разделы:
+Key
+Languages
+Words
+Replace keyword
+Params
+
+
+Key:
+In Main page you can see 3 buttons: Add key, Edit key, Remove key
+
+In add key you can enter keyword in any language, you can see what keys you already has to pressing toggle "Show all keys"
+Keywords can't be repeated.
+Press Add to adding key to end of list, or Cancel for return to main page.
+
+In edit key you can rename any key, but new key's name can't be repeated with another keys. 
+
+In remove key you can delete any key to enter keyword. !Warning, when you delete keyword you delete all words from all languages with this key.
+
+
+Languages:
+To open Languages Menu press the Edit language button in Main page.
+
+In new page you can see list of all languages in your project. 
+To add language press the top button. 
+To edit language press the Edit button over language you need.
+To remove language press Remove button over language you need. !Warning, when you remove language you remove all words from this language!
+
+In add or edit menu you can see special edit page.
+
+In this page you can edit language name, you can set language as default, display language name and set associate language.
+Language name can't be repeated.
+If you set Language as default then this language will be set in project when player first start your project, if you don't set AutoAssociate param.
+Display language is the string, that player can see in ALSL Dropdown.
+Associate language is a list of all SystemLanguages, you can set one of them and, if you set AutoAssociate param, ALSL automatic search the most suitable language for the first start.
+
+
+Words:
+To open Words Menu press the Edit words button in Main page.
+
+In this menu you can see all keys and all languages you have. Press to Language that you need opposite key that you need.
+
+In new page you can set the multi-line text and this text will be associate with this key in this language.
+Press Save to add or replace text to ALSL save file.
+
+
+Replace keyword:
+Special keywords that you need, for example, to show Player Name in the text. You can edit this keys from in game scripts. See also SetReplaceWord in Scripting.
+To open Replace Menu press the Edit replaces button in Main page.
+You can enter keyword 
+!Warning, you need some symbol over keyword, like #, or any text, that has keyword will be replaced!
+Example, we has keyword "name" and replace text "John"
+And the text: "Your name is name?" will be replaced to "Your John is John?"
+To avoid this, we will do so:
+keyword: "#name" and replace text "John"
+And the text "Your name is #name?" will be replaced to "Your name is John?"
+
+To Remove key press button "Remove key" in opposite of key that you need.
+
+
+Params:
+To open Params Menu press the Set Up Starting data button in Main page.
+
+Save path is path than ALSL Asset will be save all data in game. Default: #dp/ALSLLAng
+
+Translate path is path where players can place their translate files, when game starting first time in this path will be added file Example.LangJson. This file will be copy of your Default language file. File has standard JSON format and your fans can easy create custom translates.
+
+If you want to disable this function, just leave the field blank.
+
+Version is special int field, by this field ALSL Asset can see that your app is update.
+
+Associate language is toggle. If this toggle is on, then ALSL automatic search the most suitable language for the first start.
+
+
+
+Scripting:
+
+Разделы:
+RestartAll
+AddLanguageFromPath
+RemoveLanguage
+Replace
+GetWord
+SetLanguage (2)
+GetReplaceFromKey
+SetReplaceWord
+FindKeyInString
+
+
+RestartAll() 
+No input
+No output
+Restarting all Asset. 
+!Warning, this function will be remove all all in game adding languages and Replace keys!
+
+
+AddLanguageFromPath
+Input: string path, string filename, bool force
+
+path - path to LangJson (without file, only path)
+filename - name of LangJson (without .LangJson)
+forse (default false) - if this language already exist then that will be replaced. 
+
+No output
+Adding custom language from some path, need for custom themes, or for language from web.
+
+
+RemoveLanguage
+Input: string name
+
+name - name of removing language. 
+
+No output
+Removing some language by name.
+If language already used that it will be returns to default language automatically before removing.
+!You can't remove non custom language, only language that added from users or AddLanguageFromPath!
+
+
+Replace
+Input: string input
+
+Output: string
+
+Replace all replace keywords in input string. 
+
+
+GetWord
+Input: string key
+
+Output: string
+
+Get text in current language by key.
+
+
+SetLanguage
+Input: string name/int index
+
+No output
+Set language from index or name, ALSL Text and ALSL Dropdown will be update automatically
+
+
+GetReplaceFromKey
+Input: string key
+
+Output: string
+Return replace word from key
+
+
+SetReplaceWord
+Input: string key, string newWord
+
+No output
+Replaced some replace keyword's word to newWord. 
+Example: You need to set charter name in dialogs, use this function, when scene loaded and in all dialogs with this key player can see charter name.
+
+
+FindKeyInString
+Input: string input, string key, bool withReplace (default: false)
+
+Output: string
+Replacing key in some string to word in current language. 
+if withReplace is true, then it will be automatically used the Replace function on the string.
+!Warning, function find all of the matching keys! 
+!Example: 
+You has key "test" with word in current language "WOW!"
+You use FindKeyInString with string: "Hey, i'm testing test".
+And you in output you has: "Hey, i'm WOW!ing WOW!".
+Use special characters to avoid this, like "#"
+
+You has key "#test" with word in current language "WOW!"
+You use FindKeyInString with string: "Hey, i'm testing #test".
+And you in output you has: "Hey, i'm testing WOW!".
+Looks more great, right?
+!
+
+
+
+Custom translate from your fans 
+If you have not left the field blank Translate path, then when game starting first time in this path will be added file Example.LangJson. This file will be copy of your Default language file. 
+
+File has standard JSON format. 
+Example:
+{
+"some key 1": "Some text",
+"test key 2": "One more text"
+}
+
+On left you can see keys from your game, on right words in default language.
+Your fans can translate all right place to new language. 

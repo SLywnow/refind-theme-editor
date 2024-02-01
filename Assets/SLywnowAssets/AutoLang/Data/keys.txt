@@ -1,0 +1,15 @@
+{
+    "alllangs": [
+        "EN_en"
+    ],
+    "keys_alsl": [],
+    "keysR_alsl": [],
+    "repickR_alsl": [],
+    "langsvis": [
+        "English"
+    ],
+    "assotiate": [
+        "none"
+    ],
+    "deflang": 0
+}

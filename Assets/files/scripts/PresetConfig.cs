@@ -75,7 +75,7 @@ public class PresetConfig : MonoBehaviour
 				if (sc.config.shutdown.isOn || sc.config.reboot.isOn || sc.config.exit.isOn)
 				{
 					save = "showtools ";
-					bool firsthave=false;
+					bool firsthave = false;
 					if (sc.config.shutdown.isOn)
 					{
 						save += "shutdown";
@@ -100,7 +100,10 @@ public class PresetConfig : MonoBehaviour
 					save = "#no showtools";
 			}
 			else
-				save = text[i];
+			{
+				save = text[i].Replace("<<name>>", sc.curProj.name);
+			}
+
 			tosave.Add(save);
 		}
 
